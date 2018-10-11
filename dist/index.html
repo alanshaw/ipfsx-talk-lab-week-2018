@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en" dir="ltr"> <head> <meta charset="utf-8"> <meta http-equiv="x-ua-compatible" content="ie=edge"> <meta name="viewport" content="width=device-width, initial-scale=1"> <title>IPFSX - Lab Days 2018</title> <link rel="stylesheet" href="main.a18fadd3.css"> <link rel="stylesheet" href="dracula.7a1ad2f3.css"> </head> <body> <header class="w-100 flex items-center pa3 fixed top-0" style="z-index:100"> <a href="#0" title="home" class="w-50"> <img src="ipfs-logo.18040b70.svg" style="height:50px"> </a> <h1 class="w-50 ma0 tr f3 fw2 montserrat aqua pr2">IPFSX</h1> </header> <section> <h1 class="f1">Designing a more ergonomic IPFS API</h1> <h2 class="ma0 f1 fw2 green">Lab Week 2018</h2> </section> <section> How can IPFS API be more appealing to programmers? </section> <section> <ul class="f1 mb4"> <li>We can make it <span class="fw8">easier</span> to program for IPFS</li> <li>Programming for IPFS can be more <span class="fw8">enjoyable</span></li> <li>Programming for IPFS can be more <span class="fw8">exciting</span></li> </ul> </section> <section> <span class="f1">Solving these can <span class="fw8">encourage</span> developers to use IPFS</span> </section> <section> <ul class="f1 mb4"> <li>What would I like to code?</li> <li>If I could, what would IPFS API look like?</li> <li>I don't think we should just change things on a whim</li> <li>I do think there is an increasingly large set of reasons to change things</li> </ul> </section> <section> <span class="f1">This is about <span class="fw8">improving</span> developer experience</span> </section> <section> <div class="f1 mb3">I created <span class="fw8">IPFSX</span> as a playground for these experiments.</div> <a class="f2 white" href="https://github.com/alanshaw/ipfsx">github.com/alanshaw/ipfsx</a> </section> <section> <div class="f2">(It's currently just a mapping layer from the API I want to expose<br>to the API that IPFS or IPFS API exposes)</div> </section> <section> The biggest difference is making use of <span class="green">async iterators</span> </section> <section> <h1 class="f1">What is async iterators❓</h1> </section> <section> <div class="f1 mb4">Firstly, <code>Iterable</code> is an interface for producing <span class="fw8">iterators</span></div> <div class="f1">There are lots of things that are iterable in JS already:</div> <div class="f1">arrays, objects, maps, sets.</div> </section> <section> You can use them in <code>for (x of y)</code> loops </section> <section> <div class="f2 mb4">An <strong class="fw8"><code>Iterable</code> object</strong> exposes a function that creates an iterator</div> <div class="f2">...which can be used to iterate over the items in an iterable.</div> </section> <section> <div class="mb5">An iterator implements the <strong class="fw8">iterator protocol</strong></div> <div>i.e. it has a <code>next</code> method</div> <div>which returns an object</div> <div><code>{ done, value }</code></div> </section> <section> <div>An <strong class="fw8">async</strong> iterator instead returns a <code>Promise</code></div> <div>when you call <code>next</code></div> </section> <section> <div>You can use <em>async</em> iterables in</div> <div><code>for await (x of y)</code> loops</div> </section> <section> <div>So we have a way to stream data using native language constructs!</div> 🙌 </section> <section> <h1>No transpile!</h1> </section> <section> <span class="f2">We <span class="fw8">don't need</span> to use <span class="fw8">Node.js streams</span> or <span class="fw8">pull streams</span> any more</span> </section> <section> <div class="f2 mb3">...and it's easy to convert between pull streams and async iterables:</div> <a class="f2 white" href="https://github.com/alanshaw/pull-stream-to-async-iterator">github.com/alanshaw/pull-stream-to-async-iterator</a> <a class="f2 white" href="https://github.com/alanshaw/async-iterator-to-pull-stream">github.com/alanshaw/async-iterator-to-pull-stream</a> </section> <section> <div class="f2 mb3">...and Node.js streams are now async iterables:</div> <a class="f2 white" href="https://github.com/nodejs/node/pull/17755">github.com/nodejs/node/pull/17755</a> </section> <section> <div>No more multi API <code>add</code>, <code>addPullStream</code>, <code>addReadableStream</code></div> </section> <section> Smaller bundle, fewer dependencies! </section> <section> Fewer tests to run (testing all combinations) </section> <section> <div class="f1">Easier to create an <code>interface-ipfs-core</code> compatible interface (fewer things to implement)</div> </section> <section> Less boilerplate converting between streams </section> <section> <div>Easier to error handle - only <code>try catch</code></div> </section> <section> Better stack traces - not clipped at async boundaries </section> <section> <h1>Enough!</h1> <h2>What does it look like?</h2> </section> <section> <h2 class="mb3">Create node</h2> <pre class="ma0"><code class="javascript f2 tl">
+const ipfsx = require('ipfsx')
+const IPFS = require('ipfs') // N.B. also works with ipfs-api!
+
+const node = await ipfsx(new IPFS)
+// node is READY to use
+      </code></pre> </section> <section> <h2 class="mb3">Add content</h2> <pre class="ma0"><code class="javascript f2 tl">
+for await (const item of node.add('hello world!'))
+  console.log(item.cid.toString())
+      </code></pre> </section> <section> <h2 class="mb3">&quot;Shorthand&quot;</h2> <pre class="ma0"><code class="javascript f2 tl">
+const { cid } = await node.add('hello world!').first()
+console.log(cid.toString())
+      </code></pre> </section> <section> <h2 class="mb3">Streaming add</h2> <pre class="ma0"><code class="javascript f2 tl">
+const item = await node.add(fs.createReadStream(/*...*/)).first()
+      </code></pre> </section> <section> <h2 class="mb3">Add multiple</h2> <pre class="ma0"><code class="javascript f2 tl">
+const adder = node.add([
+  { path: 'root/file1', content: fs.createReadStream(/*...*/) },
+  { path: 'root/file2', content: fs.createReadStream(/*...*/) }
+])
+
+for await (const res of adder)
+  console.log(res.cid, res.path)
+      </code></pre> </section> <section> <h2 class="f1 mb3">For fun, create your own iterator!</h2> <pre class="ma0"><code class="javascript f2 tl">
+const generator = function * () {
+  for (let i = 0; i < 10; i++)
+    yield crypto.randomBytes()
+}
+
+const { cid } = await node.add(generator()).first()
+console.log(cid)
+      </code></pre> </section> <section> <h2 class="f1 mb3">For fun, create your own <span class="green">async</span> iterator!</h2> <pre class="ma0"><code class="javascript f2 tl">
+const generator = async function * () {
+  for (let i = 0; i < 10; i++)
+    yield new Promise(resolve => resolve(crypto.randomBytes()))
+}
+
+const { cid } = await node.add(generator()).first()
+console.log(cid)
+      </code></pre> </section> <section> <h2 class="f1 mb3">Cat it out!</h2> <pre class="ma0"><code class="javascript f2 tl">
+let data = Buffer.alloc(0)
+const cid = 'QmWGeRAEgtsHW3ec7U4qW2CyVy7eA2mFRVbk1nb24jFyks'
+
+for await (const chunk of node.cat(cid, options))
+  data = Buffer.concat([data, chunk])
+
+console.log(data.toString()) // Hello, world!
+      </code></pre> </section> <section> <div class="f2 mb3">Check out API docs and examples:</div> <a class="f2 white" href="https://github.com/alanshaw/ipfsx/blob/master/API.md">github.com/alanshaw/ipfsx/blob/master/API.md</a> <a class="f2 white mb5" href="https://github.com/alanshaw/ipfsx/tree/master/examples">github.com/alanshaw/ipfsx/tree/master/examples</a> <div class="f2 mb3">More background and rationale:</div> <a class="f2 white" href="https://github.com/alanshaw/ipfsx#background">github.com/alanshaw/ipfsx#background</a> <a class="f2 white" href="https://github.com/alanshaw/ipfsx/blob/master/RATIONALE.md">github.com/alanshaw/ipfsx/blob/master/RATIONALE.md</a> </section> <script src="main.286812ba.js"></script> </body> </html>
